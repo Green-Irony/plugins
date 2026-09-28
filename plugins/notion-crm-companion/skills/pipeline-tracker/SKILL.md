@@ -28,7 +28,10 @@ Every tool named below with a `notion-` prefix (`notion-search`, `notion-fetch`,
 `notion-query-data-sources`, `notion-query-database-view`, and the create/update-page tools) is a
 tool on that connected Notion server — use whichever the connector exposes. If your environment
 lists Notion tools under a qualified server name (e.g. `Notion:notion-search`), use that qualified
-form; the bare names here identify the capability, not a specific registration.
+form; the bare names here identify the capability, not a specific registration. If your
+environment makes you load tools before calling them, load all of these in one go before your
+first Notion call, including `notion-create-pages` (logging a call often adds a contact) — not
+search first and the query or create tools later.
 
 ## First: find the template (binding)
 
@@ -42,7 +45,9 @@ IDs or schema — discover them:
    types, and Stage options. Users rename things; map semantically ("Deal Value" renamed to "ACV"
    is still the value property). Write to what exists, not what you remember. From the fetch,
    also capture each database's data source URL (the `collection://…` in its `<data-source>` tag)
-   and its view URLs — you need them to scope searches and run view-mode queries.
+   and its view URLs — you need them to scope searches and run view-mode queries. A view URL
+   takes the form `https://www.notion.so/<database-id>?v=<view-id>`; other forms (such as
+   `app.notion.com/view/<id>`) are rejected as invalid.
 4. Remember what you found for the rest of the conversation — don't re-discover on every command.
 
 **What's safe to cache, what isn't.** Schema and database IDs are structural — they don't change
@@ -97,17 +102,18 @@ first-run detection on what the user actually asked:
   my book", "how do I get started", or a bare menu / help with no deal in hand) → run the cheap
   probe below before anything else.
 
-**The cheap probe.** Don't paginate the book to decide if it's fresh. Search the three known
-sample-deal names from `references/sample-data.md`, scoped to the pipeline's `data_source_url`
-(the `collection://…` captured at bind). That's one search, not an enumeration — and unlike a
-full read it works on every plan. What comes back tells you which case you're in:
+**The cheap probe.** Don't paginate the book to decide if it's fresh. Search the three sample deals
+the free edition ships with (**Cascade Freight — Renewal + Expansion**, **Brightline — Dispatch
+Automation Pilot**, **Northwind — Ops Platform Rollout**), scoped to the pipeline's
+`data_source_url` (the `collection://…` captured at bind). That's one search, not an enumeration —
+and unlike a full read it works on every plan. What comes back tells you which case you're in:
 
-- **Only the template's sample deals** — the pipeline still holds the example records that ship
-  with a fresh duplication. The exact shipped set is listed in `references/sample-data.md` —
-  match against it to tell samples from real data reliably. Don't treat these as the user's book
-  and don't build on them. If the pipeline has these plus other deals, the user has started real
-  work — skip the setup prompt. If you can't tell whether the rows are samples or real, ask once.
-  Offer the path in:
+- **Only the template's sample deals** — the pipeline still holds the example records that ship with
+  a fresh duplication. Match by deal name against the three above (full edition: see
+  `references/sample-data.md`). If only some match (renamed or deleted), they're still likely
+  samples; confirm with one question. Don't treat these as the user's book and don't build on them.
+  If the pipeline has these plus other deals, the user has started real work — skip the setup
+  prompt. If you can't tell whether the rows are samples or real, ask once. Offer the path in:
 
   > Looks like your pipeline still has the sample deals the template ships with. Want me to load
   > your real book? Drop a CSV export or paste your deals and I'll bring them in.
@@ -115,8 +121,8 @@ full read it works on every plan. What comes back tells you which case you're in
   The connector has **no delete verb** (see When things go wrong), so you can't remove the samples
   yourself — but deletion is the user's one manual step, and you can make it a couple of clicks.
   After the real data is in, hand the user a direct Notion link to each sample deal (the page URL
-  from when you matched them against `references/sample-data.md`) so they can open and delete each
-  one. List them plainly:
+  from when you matched them in the probe) so they can open and delete each one. List them
+  plainly:
 
   > Your deals are loaded. Delete the template's samples when you get a sec — one click each:
   > - [Cascade Freight — Renewal + Expansion](https://notion.so/<live-page-id>)
